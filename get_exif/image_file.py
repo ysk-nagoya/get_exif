@@ -1,8 +1,12 @@
 import glob
 import os
 
+import matplotlib
 from matplotlib import pyplot
 from PIL import Image
+
+matplotlib.rcParams["axes.xmargin"] = 0
+matplotlib.rcParams["axes.ymargin"] = 0
 
 TAGS_JP = {
     33434: "露出時間",  # ExposureTime
@@ -58,6 +62,11 @@ def _remove_duplicate(list_):
     return list(set(list_))
 
 
+def _sort_dict(dict_):
+    sorted_dict = sorted(dict_.items())  # 変更
+    return dict((x, y) for x, y in sorted_dict)
+
+
 def _get_image_path_list(parent_path):
     search_path_pattern = os.path.join(parent_path, "**", "*.JPG")
     path_list = glob.glob(search_path_pattern, recursive=True)
@@ -77,8 +86,7 @@ def _get_focal_length_list(path_list):
     focal_length_list = []
     for path in path_list:
         exif_dict = _get_exif_dict_jp_name_key(path)
-        if focal_length := exif_dict.get("レンズ焦点距離"):
-            focal_length_list.append(focal_length)
+        focal_length_list.append(exif_dict.get("レンズ焦点距離"))
     return focal_length_list
 
 
@@ -95,9 +103,13 @@ def _get_count_dict_by_tens_digit(focal_length_list):
 
 
 def _view_graph_image(values_dict, count_zero_show=False):
-    key_list = list(values_dict.keys())
-    value_list = list(values_dict.values())
-    pyplot.bar(key_list, value_list, width=1)
+    values_dict = _sort_dict(values_dict)
+    if not count_zero_show:
+        values_dict = {str(key): value for key, value in values_dict.items()}
+    label_list = list(values_dict.keys())
+    count_list = list(values_dict.values())
+    bar_graph = pyplot.bar(label_list, count_list, width=0.9)
+    pyplot.bar_label(bar_graph, labels=count_list)
     pyplot.show()
 
 

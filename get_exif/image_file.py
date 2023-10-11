@@ -86,29 +86,28 @@ def _get_count_dict_by_tens_digit(focal_length_list):
     round_downed_list = [
         int(focal_length / 10) * 10 for focal_length in focal_length_list
     ]
-    unique_num_list = _remove_duplicate(round_downed_list)
-    result_dict = {
-        num: 0 for num in range(min(unique_num_list), max(unique_num_list) + 10, 10)
-    }
+    result_dict = {}
     for num in round_downed_list:
+        if not result_dict.get(num):
+            result_dict[num] = 0
         result_dict[num] += 1
     return result_dict
 
 
-def _plot_graph_image(values_dict):
+def _view_graph_image(values_dict, count_zero_show=False):
     key_list = list(values_dict.keys())
     value_list = list(values_dict.values())
-    pyplot.bar(key_list, value_list)
+    pyplot.bar(key_list, value_list, width=1)
+    pyplot.show()
 
 
 def execute():
     parent_path = "D:\\趣味\\カメラ\\元データ"  # cspell: disable-line
     path_list = _get_image_path_list(parent_path)
+    print({"file_count": len(path_list)})
     focal_length_list = _get_focal_length_list(path_list)
     count_dict = _get_count_dict_by_tens_digit(focal_length_list)
-    _plot_graph_image()
-
-    print(count_dict)
+    _view_graph_image(count_dict)
 
 
 execute()

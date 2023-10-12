@@ -63,7 +63,7 @@ def _remove_duplicate(list_):
 
 
 def _sort_dict(dict_):
-    sorted_dict = sorted(dict_.items())  # 変更
+    sorted_dict = sorted(dict_.items())
     return dict((x, y) for x, y in sorted_dict)
 
 

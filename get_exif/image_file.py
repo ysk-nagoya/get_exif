@@ -67,6 +67,13 @@ def _sort_dict(dict_):
     return dict((x, y) for x, y in sorted_dict)
 
 
+def _remove_value_from_list(list_, remove_value_list):
+    if not remove_value_list:
+        return list_
+
+    return [value for value in list_ if value not in remove_value_list]
+
+
 def _get_image_path_list(parent_path):
     search_path_pattern = os.path.join(parent_path, "**", "*.JPG")
     path_list = glob.glob(search_path_pattern, recursive=True)
@@ -82,18 +89,16 @@ def _get_exif_dict_jp_name_key(path):
     }
 
 
-def _get_focal_length_list(path_list):
-    focal_length_list = []
+def _get_focal_len_list(path_list):
+    focal_len_list = []
     for path in path_list:
         exif_dict = _get_exif_dict_jp_name_key(path)
-        focal_length_list.append(exif_dict.get("レンズ焦点距離"))
-    return focal_length_list
+        focal_len_list.append(exif_dict.get("レンズ焦点距離"))
+    return focal_len_list
 
 
-def _get_count_dict_by_tens_digit(focal_length_list):
-    round_downed_list = [
-        int(focal_length / 10) * 10 for focal_length in focal_length_list
-    ]
+def _get_count_dict_by_tens_digit(focal_len_list):
+    round_downed_list = [int(focal_len / 10) * 10 for focal_len in focal_len_list]
     result_dict = {}
     for num in round_downed_list:
         if not result_dict.get(num):
@@ -102,9 +107,9 @@ def _get_count_dict_by_tens_digit(focal_length_list):
     return result_dict
 
 
-def _view_graph_image(values_dict, count_zero_show=False):
+def _view_graph_image(values_dict, show_count_zero=False):
     values_dict = _sort_dict(values_dict)
-    if not count_zero_show:
+    if not show_count_zero:
         values_dict = {str(key): value for key, value in values_dict.items()}
     label_list = list(values_dict.keys())
     count_list = list(values_dict.values())
@@ -117,8 +122,9 @@ def execute():
     parent_path = "D:\\趣味\\カメラ\\元データ"  # cspell: disable-line
     path_list = _get_image_path_list(parent_path)
     print({"file_count": len(path_list)})
-    focal_length_list = _get_focal_length_list(path_list)
-    count_dict = _get_count_dict_by_tens_digit(focal_length_list)
+    focal_len_list = _get_focal_len_list(path_list)
+    focal_len_list = _remove_value_from_list(focal_len_list)
+    count_dict = _get_count_dict_by_tens_digit(focal_len_list)
     _view_graph_image(count_dict)
 
 

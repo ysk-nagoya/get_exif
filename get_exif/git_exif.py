@@ -104,7 +104,7 @@ def _get_focal_len_list(path_list):
     return focal_len_list
 
 
-def _remove_value_from_list(list_, remove_value_list=[]):
+def _remove_value_from_list(list_, remove_value_list):
     return (
         [value for value in list_ if value not in remove_value_list]
         if remove_value_list
@@ -112,8 +112,11 @@ def _remove_value_from_list(list_, remove_value_list=[]):
     )
 
 
-def _get_count_dict_by_tens_digit(focal_len_list):
-    round_downed_list = [int(focal_len / 10) * 10 for focal_len in focal_len_list]
+def _get_count_dict_by_tens_digit(focal_len_list, digit):
+    place_num = pow(10, digit)
+    round_downed_list = [
+        int(focal_len / place_num) * place_num for focal_len in focal_len_list
+    ]
     result_dict = {}
     for num in round_downed_list:
         if not result_dict.get(num):
@@ -122,9 +125,9 @@ def _get_count_dict_by_tens_digit(focal_len_list):
     return result_dict
 
 
-def _view_graph_image(values_dict, show_count_zero=False):
+def _view_graph_image(values_dict, show_count_zero_values=False):
     values_dict = _sort_dict(values_dict)
-    if not show_count_zero:
+    if not show_count_zero_values:
         values_dict = {str(key): value for key, value in values_dict.items()}
     label_list = list(values_dict.keys())
     count_list = list(values_dict.values())
@@ -133,17 +136,39 @@ def _view_graph_image(values_dict, show_count_zero=False):
     pyplot.show()
 
 
-def execute():
+def execute(
+    parent_path,
+    exclusion_focus_len_list=[],
+    round_down_digit_num=1,
+    show_count_zero_values=False,
+):
     with _stop_watch():
-        parent_path = "D:\\趣味\\カメラ\\元データ"  # cspell: disable-line
         path_list = _get_image_path_list(parent_path)
         print({"file_count": len(path_list)})
         focal_len_list = _get_focal_len_list(path_list)
         focal_len_list = _remove_value_from_list(
-            focal_len_list, remove_value_list=[20, 0]
+            focal_len_list, remove_value_list=exclusion_focus_len_list
         )
-        count_dict = _get_count_dict_by_tens_digit(focal_len_list)
-    _view_graph_image(count_dict)
+        count_dict = _get_count_dict_by_tens_digit(focal_len_list, round_down_digit_num)
+    _view_graph_image(count_dict, show_count_zero_values=show_count_zero_values)
 
 
-execute()
+"""
+parent_path:写真データが入っているフォルダのパス。
+    このパスの直下と1階層下のサブフォルダまでOK。
+
+exclusion_focus_length_list:除外する焦点距離のリスト。
+    初期値は空。
+
+round_down_digit_num:焦点距離を切り捨てる桁数。
+    初期値は1桁目切り捨て。
+
+show_count_zero_values:カウントが0の焦点距離を表示するか。
+    初期値は非表示。
+"""
+execute(
+    "D:\\趣味\\カメラ\\元データ",
+    exclusion_focus_len_list=[],
+    round_down_digit_num=1,
+    show_count_zero_values=False,
+)

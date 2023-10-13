@@ -81,7 +81,7 @@ def _sort_dict(dict_: dict):
     no_data_values = dict_.pop("no_data", 0)
     sorted_dict = sorted(dict_.items())
     count_dict = dict((x, y) for x, y in sorted_dict)
-    return {"no_data": no_data_values} if no_data_values else {} | count_dict
+    return ({"no_data": no_data_values} if no_data_values else {}) | count_dict
 
 
 def _get_image_path_list(parent_path):
@@ -120,11 +120,7 @@ def _remove_value_from_list(list_, remove_value_list):
 def _get_count_dict_by_tens_digit(focal_len_list, digit):
     place_num = pow(10, digit)
     round_downed_list = [
-        (
-            int(focal_len / place_num) * place_num
-            if isinstance(focal_len, int)
-            else "no_data"
-        )
+        (int(focal_len / place_num) * place_num if focal_len is not None else "no_data")
         for focal_len in focal_len_list
     ]
     result_dict = {}

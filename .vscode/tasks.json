@@ -8,6 +8,12 @@
       "type": "shell",
       "args": ["${workspaceFolder}"],
       "command": "workspace_tasks\\compile.bat"
+    },
+    {
+      "label": "env-save",
+      "type": "shell",
+      "args": ["${workspaceFolder}"],
+      "command": "workspace_tasks\\env-save.bat"
     }
   ]
 }

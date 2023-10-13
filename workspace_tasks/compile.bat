@@ -1,7 +1,7 @@
 @echo off
 
-set output_dir=D:\my_repositories\get_exif\compile\get_exif_compile
 set python_file=D:\my_repositories\get_exif\get_exif\get_exif.py
+set output_dir=D:\my_repositories\get_exif\compile\get_exif_compile
 
 call activate get-exif
-nuitka %python_file% --standalone --remove-output --follow-imports --enable-plugin=tk-inter --enable-plugin=matplotlib --output-dir=%output_dir%
+nuitka %python_file% --standalone --remove-output --follow-imports --enable-plugin=tk-inter --output-dir=%output_dir%

@@ -214,7 +214,7 @@ def _input_setting_values():
     )
 
 
-def execute():
+def main():
     with _stop_watch():
         print("中止したい場合は'Ctrl + C'を押すか、画面ごと閉じてね。")
         (
@@ -238,4 +238,5 @@ def execute():
     _view_graph_image(count_dict, show_count_zero=show_count_zero)
 
 
-execute()
+if __name__ == "__main__":
+    main()

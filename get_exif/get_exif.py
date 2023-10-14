@@ -1,7 +1,10 @@
 import glob
 import os
+import re
 import time
+import unicodedata
 from contextlib import contextmanager
+from tkinter import filedialog
 
 import matplotlib
 from matplotlib import pyplot
@@ -67,16 +70,18 @@ def _stop_watch():
         start_sec = time.time()
         yield
     finally:
-        print(f"{time.time() - start_sec}[sec]")
+        print(f"処理時間: {time.time() - start_sec}[sec]")
 
 
 def _remove_duplicate(list_):
     return list(set(list_))
 
 
-def _sort_dict(dict_):
+def _sort_dict(dict_: dict):
+    no_data_values = dict_.pop("no_data", 0)
     sorted_dict = sorted(dict_.items())
-    return dict((x, y) for x, y in sorted_dict)
+    count_dict = dict((x, y) for x, y in sorted_dict)
+    return ({"no_data": no_data_values} if no_data_values else {}) | count_dict
 
 
 def _get_image_path_list(parent_path):
@@ -96,11 +101,11 @@ def _get_exif_dict_jp_name_key(path):
 
 def _get_focal_len_list(path_list):
     focal_len_list = []
-    len_ = len(path_list)
     for index, path in enumerate(path_list):
-        print(f"{index + 1}/{len_}")
+        print("\r", f"{(index + 1):05}/{len(path_list):05}", end="")
         exif_dict = _get_exif_dict_jp_name_key(path)
         focal_len_list.append(exif_dict.get("レンズ焦点距離"))
+    print("\n")
     return focal_len_list
 
 
@@ -115,7 +120,8 @@ def _remove_value_from_list(list_, remove_value_list):
 def _get_count_dict_by_tens_digit(focal_len_list, digit):
     place_num = pow(10, digit)
     round_downed_list = [
-        int(focal_len / place_num) * place_num for focal_len in focal_len_list
+        (int(focal_len / place_num) * place_num if focal_len is not None else "no_data")
+        for focal_len in focal_len_list
     ]
     result_dict = {}
     for num in round_downed_list:
@@ -125,9 +131,9 @@ def _get_count_dict_by_tens_digit(focal_len_list, digit):
     return result_dict
 
 
-def _view_graph_image(values_dict, show_count_zero_values=False):
+def _view_graph_image(values_dict, show_count_zero=False):
     values_dict = _sort_dict(values_dict)
-    if not show_count_zero_values:
+    if not show_count_zero:
         values_dict = {str(key): value for key, value in values_dict.items()}
     label_list = list(values_dict.keys())
     count_list = list(values_dict.values())
@@ -136,39 +142,97 @@ def _view_graph_image(values_dict, show_count_zero_values=False):
     pyplot.show()
 
 
-def execute(
-    parent_path,
-    exclusion_focus_len_list=[],
-    round_down_digit_num=1,
-    show_count_zero_values=False,
-):
-    with _stop_watch():
-        path_list = _get_image_path_list(parent_path)
-        print({"file_count": len(path_list)})
-        focal_len_list = _get_focal_len_list(path_list)
-        focal_len_list = _remove_value_from_list(
-            focal_len_list, remove_value_list=exclusion_focus_len_list
+def _input_values(description, example_text=""):
+    print(f"{description}")
+    if example_text:
+        print(f"入力例）{example_text}")
+    input_text = input(">")
+    input_text = unicodedata.normalize("NFKC", input_text)
+    input_text = input_text.lower()
+    input_text = input_text.replace("、", ",")
+    return re.sub(r"[ 　]+", "", input_text)
+
+
+def _input_ignore_focus_len_list():
+    while 1:
+        input_text = _input_values(
+            "除外したい焦点距離がある場合はカンマ区切りで入力",
+            "24mmと70mmを除外したい場合：24,70",
         )
-        count_dict = _get_count_dict_by_tens_digit(focal_len_list, round_down_digit_num)
-    _view_graph_image(count_dict, show_count_zero_values=show_count_zero_values)
+        if not input_text:
+            return []
+        try:
+            return [int(text_focus_len) for text_focus_len in input_text.split(",")]
+        except (ValueError, TypeError):
+            print("数字以外が入ってるかも。もう一度入力。")
 
 
-"""
-parent_path:写真データが入っているフォルダのパス。
-    このパスの直下と1階層下のサブフォルダまでOK。
+def _input_round_down_digit_num():
+    while 1:
+        input_text = _input_values(
+            "焦点距離を切り捨てる桁数（未入力の場合：1）",
+            "2桁目まで切り捨てる場合：2",
+        )
+        if not input_text:
+            return 1
+        try:
+            return int(input_text)
+        except (ValueError, TypeError):
+            print("数字以外が入力されたかも。もう一度入力。")
 
-exclusion_focus_length_list:除外する焦点距離のリスト。
-    初期値は空。
 
-round_down_digit_num:焦点距離を切り捨てる桁数。
-    初期値は1桁目切り捨て。
+def _input_show_count_zero():
+    while 1:
+        input_text = _input_values(
+            "結果に合計が0の焦点距離を表示するかどうか（未入力の場合：no）",
+            "しない場合：0 もしくは n もしくは no、する場合：1 もしくは y もしくは yes",
+        )
+        if input_text in ["1", "y", "yes", "true"]:
+            return True
+        elif not input_text or input_text in ["0", "n", "no", "false"]:
+            return False
+        else:
+            print("所定の文字以外が入力されたかも。もう一度入力。")
 
-show_count_zero_values:カウントが0の焦点距離を表示するか。
-    初期値は非表示。
-"""
-execute(
-    "D:\\趣味\\カメラ\\元データ",
-    exclusion_focus_len_list=[],
-    round_down_digit_num=1,
-    show_count_zero_values=False,
-)
+
+def _input_setting_values():
+    print("写真の入っているフォルダを選択")
+    parent_path = filedialog.askdirectory()
+    print(f">{parent_path}")
+    ignore_focus_len_list = _input_ignore_focus_len_list()
+    round_down_digit_num = _input_round_down_digit_num()
+    show_count_zero = _input_show_count_zero()
+    return (
+        parent_path,
+        ignore_focus_len_list,
+        round_down_digit_num,
+        show_count_zero,
+    )
+
+
+def main():
+    with _stop_watch():
+        print("中止したい場合は'Ctrl + C'を押すか、画面ごと閉じてね。")
+        (
+            parent_path,
+            ignore_focus_len_list,
+            round_down_digit_num,
+            show_count_zero,
+        ) = _input_setting_values()
+
+        if path_list := _get_image_path_list(parent_path):
+            print(f"ファイル総数: {len(path_list)}")
+            focal_len_list = _get_focal_len_list(path_list)
+            focal_len_list = _remove_value_from_list(
+                focal_len_list, remove_value_list=ignore_focus_len_list
+            )
+            count_dict = _get_count_dict_by_tens_digit(
+                focal_len_list, round_down_digit_num
+            )
+        else:
+            print("*.jpg画像が見つかりませんでした……")
+    _view_graph_image(count_dict, show_count_zero=show_count_zero)
+
+
+if __name__ == "__main__":
+    main()

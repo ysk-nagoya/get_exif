@@ -1,0 +1,1 @@
+conda env export -n get-exif > get-exif.yml

@@ -5,6 +5,7 @@
     "Latitudeyyy",
     "Latitudezzz",
     "OECF",
+    "tqdm",
     "xmargin",
     "ymargin"
   ]

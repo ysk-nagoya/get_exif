@@ -26,6 +26,7 @@ class _Base:
         self.round_down_digit_num = 1
         self.show_count_zero = False
 
+        self.focus_len_list = []
         self.count_dict = {}
 
     @contextmanager
@@ -55,6 +56,10 @@ class _Base:
     @property
     def path_list_length(self):
         return len(self.path_list)
+
+    @property
+    def focus_len_list_length(self):
+        return len(self.focus_len_list)
 
 
 class _Input(_Base):
@@ -119,16 +124,17 @@ class _Get(_Input):
             if (name := TAGS_JP.get(key))
         }
 
-    def _get_focal_len_list_by_path_list(self):
-        focal_len_list = []
+    def _set_focus_len_list_by_path_list(self):
         for index, path in enumerate(self.path_list):
             print("\r", f"{(index + 1):05}/{self.path_list_length:05}", end="")
             exif_dict = self._get_exif_dict_jp_name_key(path)
-            focal_len_list.append(exif_dict.get("レンズ焦点距離"))
+            focus_len_data = exif_dict.get("レンズ焦点距離")
+            self.focus_len_list.append(
+                focus_len_data.numerator / focus_len_data.denominator
+            )
         print("\n")
-        return focal_len_list
 
-    def _get_count_dict_by_round_digit(self, focal_len_list):
+    def _set_count_dict_by_round_digit(self):
         place_num = pow(10, self.round_down_digit_num)
         round_downed_list = [
             (
@@ -136,14 +142,10 @@ class _Get(_Input):
                 if focal_len is not None
                 else _NO_DATA
             )
-            for focal_len in focal_len_list
+            for focal_len in self.focus_len_list
         ]
-        result_dict = {}
         for num in round_downed_list:
-            if not result_dict.get(num):
-                result_dict[num] = 0
-            result_dict[num] += 1
-        return result_dict
+            self.count_dict[num] = self.count_dict.get(num, 0) + 1
 
 
 class _GetExif(_Get):
@@ -163,17 +165,22 @@ class _GetExif(_Get):
 
     def _count_focus_length(self):
         if self.path_list:
-            focal_len_list = self._get_focal_len_list_by_path_list()
-            focal_len_list = self._remove_value_from_list(
-                focal_len_list, remove_value_list=self.ignore_focus_len_list
+            self._set_focus_len_list_by_path_list()
+            self.focus_len_list = self._remove_value_from_list(
+                self.focus_len_list, remove_value_list=self.ignore_focus_len_list
             )
-            self.count_dict = self._get_count_dict_by_round_digit(focal_len_list)
+            self._set_count_dict_by_round_digit()
         else:
             print("*.jpg画像が見つかりませんでした……")
 
+    def _print_statistics(self):
+        average = (
+            sum([focus_len for focus_len in self.focus_len_list if focus_len])
+            / self.focus_len_list_length
+        )
+        print(f"平均使用焦点距離: {average:.2f}mm")
+
     def _view_graph_image(self):
-        if not self.count_dict:
-            return
         values_dict = self._sort_dict(self.count_dict)
         if not self.show_count_zero:
             values_dict = {str(key): value for key, value in values_dict.items()}
@@ -190,7 +197,10 @@ class GetExif(_GetExif):
             self._set_settings_by_input()
             self._set_image_path_list_by_parent_path()
             self._count_focus_length()
-        self._view_graph_image()
+
+        if self.count_dict:
+            self._print_statistics()
+            self._view_graph_image()
 
 
 if __name__ == "__main__":

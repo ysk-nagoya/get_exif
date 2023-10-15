@@ -1,0 +1,1 @@
+copy D:\my_repositories\get_exif\workspace_tasks\package_path_windows.pth C:\Users\yskna\AppData\Local\Anaconda3\envs\get-exif\Lib\site-packages > nul

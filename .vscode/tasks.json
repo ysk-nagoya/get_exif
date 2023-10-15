@@ -14,6 +14,12 @@
       "type": "shell",
       "args": ["${workspaceFolder}"],
       "command": "workspace_tasks\\env-save.bat"
+    },
+    {
+      "label": "env-copy_package_path",
+      "type": "shell",
+      "args": ["${workspaceFolder}"],
+      "command": "workspace_tasks\\env-copy_package_path.bat"
     }
   ]
 }

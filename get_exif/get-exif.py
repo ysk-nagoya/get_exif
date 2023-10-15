@@ -10,7 +10,7 @@ import matplotlib
 from matplotlib import pyplot
 from PIL import Image
 
-from .constant import TAGS_JP
+from get_exif.constant import TAGS_JP
 
 matplotlib.rcParams["axes.xmargin"] = 0
 matplotlib.rcParams["axes.ymargin"] = 0

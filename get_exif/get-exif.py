@@ -22,11 +22,11 @@ class _Base:
     def __init__(self):
         self.parent_path = ""
         self.path_list = []
-        self.ignore_focus_len_list = []
+        self.ignore_focal_len_list = []
         self.round_down_digit_num = 1
         self.show_count_zero = False
 
-        self.focus_len_list = []
+        self.focal_len_list = []
         self.count_dict = {}
 
     @contextmanager
@@ -58,8 +58,8 @@ class _Base:
         return len(self.path_list)
 
     @property
-    def focus_len_list_length(self):
-        return len(self.focus_len_list)
+    def focal_len_list_length(self):
+        return len(self.focal_len_list)
 
 
 class _Input(_Base):
@@ -73,7 +73,7 @@ class _Input(_Base):
         input_text = input_text.replace("、", ",")
         return re.sub(r"[ 　]+", "", input_text)
 
-    def _input_ignore_focus_len_list(self):
+    def _input_ignore_focal_len_list(self):
         while 1:
             input_text = self._input_values(
                 "除外したい焦点距離がある場合はカンマ区切りで入力",
@@ -81,7 +81,7 @@ class _Input(_Base):
             )
             try:
                 return (
-                    [int(text_focus_len) for text_focus_len in input_text.split(",")]
+                    [int(text_focal_len) for text_focal_len in input_text.split(",")]
                     if input_text
                     else []
                 )
@@ -124,13 +124,13 @@ class _Get(_Input):
             if (name := TAGS_JP.get(key))
         }
 
-    def _set_focus_len_list_by_path_list(self):
+    def _set_focal_len_list_by_path_list(self):
         for index, path in enumerate(self.path_list):
             print("\r", f"{(index + 1):05}/{self.path_list_length:05}", end="")
             exif_dict = self._get_exif_dict_jp_name_key(path)
-            focus_len_data = exif_dict.get("レンズ焦点距離")
-            self.focus_len_list.append(
-                focus_len_data.numerator / focus_len_data.denominator
+            focal_len_data = exif_dict.get("レンズ焦点距離")
+            self.focal_len_list.append(
+                focal_len_data.numerator / focal_len_data.denominator
             )
         print("\n")
 
@@ -142,7 +142,7 @@ class _Get(_Input):
                 if focal_len is not None
                 else _NO_DATA
             )
-            for focal_len in self.focus_len_list
+            for focal_len in self.focal_len_list
         ]
         for num in round_downed_list:
             self.count_dict[num] = self.count_dict.get(num, 0) + 1
@@ -153,7 +153,7 @@ class _GetExif(_Get):
         print("写真の入っているフォルダを選択")
         self.parent_path = filedialog.askdirectory()
         print(f">{self.parent_path}")
-        self.ignore_focus_len_list = self._input_ignore_focus_len_list()
+        self.ignore_focal_len_list = self._input_ignore_focal_len_list()
         self.round_down_digit_num = self._input_round_down_digit_num()
         self.show_count_zero = self._input_show_count_zero()
 
@@ -163,11 +163,11 @@ class _GetExif(_Get):
         self.path_list = self._remove_duplicate(path_list)
         print(f"ファイル総数: {self.path_list_length}")
 
-    def _count_focus_length(self):
+    def _count_focal_length(self):
         if self.path_list:
-            self._set_focus_len_list_by_path_list()
-            self.focus_len_list = self._remove_value_from_list(
-                self.focus_len_list, remove_value_list=self.ignore_focus_len_list
+            self._set_focal_len_list_by_path_list()
+            self.focal_len_list = self._remove_value_from_list(
+                self.focal_len_list, remove_value_list=self.ignore_focal_len_list
             )
             self._set_count_dict_by_round_digit()
         else:
@@ -175,8 +175,8 @@ class _GetExif(_Get):
 
     def _print_statistics(self):
         average = (
-            sum([focus_len for focus_len in self.focus_len_list if focus_len])
-            / self.focus_len_list_length
+            sum([focal_len for focal_len in self.focal_len_list if focal_len])
+            / self.focal_len_list_length
         )
         print(f"平均使用焦点距離: {average:.2f}mm")
 
@@ -196,7 +196,7 @@ class GetExif(_GetExif):
             print("中止したい場合は'Ctrl + C'を押すか、画面ごと閉じてね。")
             self._set_settings_by_input()
             self._set_image_path_list_by_parent_path()
-            self._count_focus_length()
+            self._count_focal_length()
 
         if self.count_dict:
             self._print_statistics()

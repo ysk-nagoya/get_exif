@@ -46,3 +46,44 @@ TAGS_JP = {
     41995: "撮影条件記述情報",  # DeviceSettingDescription
     41996: "被写体距離レンジ",  # SubjectDistanceRange
 }
+
+TYPICAL_FOCAL_LENGTH_LIST = [
+    11,
+    14,
+    16,
+    17,
+    18,
+    20,
+    24,
+    28,
+    35,
+    40,
+    50,
+    70,
+    85,
+    90,
+    100,
+    105,
+    135,
+    180,
+    200,
+    300,
+    400,
+    500,
+    600,
+    800,
+    1000,
+    1200,
+    1600,
+    2000,
+    2400,
+    3000,
+]
+
+
+class _Mode:
+    TYPICAL = "typical"
+    BY_IMAGE = "by_image"
+
+
+MODE = _Mode()

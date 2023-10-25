@@ -26,7 +26,6 @@ class _Base:
         self.mode = MODE.TYPICAL
         self.ignore_focal_len_list = []
         self.round_down_digit_num = 1
-        self.show_count_zero = False
 
         self.focal_len_list = []
         self.count_dict = {}
@@ -123,19 +122,6 @@ class _Input(_Base):
             except (ValueError, TypeError):
                 print("数字以外が入力されたかも。もう一度入力。")
 
-    def _input_show_count_zero(self):
-        while 1:
-            input_text = self._input_values(
-                "結果に合計が0の焦点距離を表示するかどうか（未入力の場合：no）",
-                "しない場合：0 もしくは n もしくは no、する場合：1 もしくは y もしくは yes",
-            )
-            if input_text in ["1", "y", "yes", "true"]:
-                return True
-            elif not input_text or input_text in ["0", "n", "no", "false"]:
-                return False
-            else:
-                print("所定の文字以外が入力されたかも。もう一度入力。")
-
 
 class _Get(_Input):
     def _get_exif_dict_jp_name_key(self, path):
@@ -152,9 +138,10 @@ class _Get(_Input):
         for index, path in enumerate(self.path_list):
             print("\r", f"{(index + 1):05}/{self.path_list_length:05}", end="")
             exif_dict = self._get_exif_dict_jp_name_key(path)
-            focal_len_data = exif_dict.get("レンズ焦点距離")
             self.focal_len_list.append(
-                focal_len_data.numerator / focal_len_data.denominator
+                (focal_len_data.numerator / focal_len_data.denominator)
+                if (focal_len_data := exif_dict.get("レンズ焦点距離")) is not None
+                else None
             )
         print("\n")
 
@@ -163,7 +150,7 @@ class _Get(_Input):
             self.count_dict[focal_len] = 0
 
         for focal_len in self.focal_len_list:
-            data = 0
+            focal_temp = _NO_DATA
 
             if focal_len is not None:
                 focal_len_int = int(focal_len)
@@ -172,24 +159,18 @@ class _Get(_Input):
                     round_focal_len not in TYPICAL_FOCAL_LENGTH_LIST and round_focal_len
                 ):
                     round_focal_len -= 1
-                data = round_focal_len or focal_len_int
-            else:
-                data = _NO_DATA
+                focal_temp = round_focal_len or focal_len_int
 
-            self.count_dict[data] = self.count_dict.get(data, 0) + 1
+            self.count_dict[focal_temp] = self.count_dict.get(focal_temp, 0) + 1
 
     def _set_count_dict_by_image_data_with_round_digit(self):
         place_num = pow(10, self.round_down_digit_num)
-        round_downed_list = [
-            (
-                int(focal_len / place_num) * place_num
-                if focal_len is not None
-                else _NO_DATA
-            )
-            for focal_len in self.focal_len_list
-        ]
-        for num in round_downed_list:
-            self.count_dict[num] = self.count_dict.get(num, 0) + 1
+        for focal_len in self.focal_len_list:
+            focal_temp = _NO_DATA
+            if focal_len is not None:
+                focal_temp = int(focal_len / place_num) * place_num
+
+            self.count_dict[focal_temp] = self.count_dict.get(focal_temp, 0) + 1
 
 
 class _GetExif(_Get):
@@ -202,7 +183,6 @@ class _GetExif(_Get):
         self.ignore_focal_len_list = self._input_ignore_focal_len_list()
         if self.mode_is_by_image:
             self.round_down_digit_num = self._input_round_down_digit_num()
-            self.show_count_zero = self._input_show_count_zero()
 
     def _set_image_path_list_by_parent_path(self):
         search_path_pattern = os.path.join(self.parent_path, "**", "*.JPG")
@@ -231,8 +211,7 @@ class _GetExif(_Get):
 
     def _view_graph_image(self):
         values_dict = self._sort_dict(self.count_dict)
-        if not self.show_count_zero:
-            values_dict = {str(key): value for key, value in values_dict.items()}
+        values_dict = {str(key): value for key, value in values_dict.items()}
         count_list = list(values_dict.values())
         bar_graph = pyplot.bar(list(values_dict.keys()), count_list, width=0.9)
         pyplot.bar_label(bar_graph, labels=count_list)
